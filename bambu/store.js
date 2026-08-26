@@ -9,34 +9,66 @@ function ensureFile() {
 	if (!fs.existsSync(FILE_PATH)) fs.writeFileSync(FILE_PATH, '{}');
 }
 
-function readChannels() {
+function readData() {
 	ensureFile();
-	return JSON.parse(fs.readFileSync(FILE_PATH, 'utf8'));
+	const raw = JSON.parse(fs.readFileSync(FILE_PATH, 'utf8'));
+
+	// Migrate the old schema (guildId -> channelId string) to the object schema.
+	const migrated = {};
+	for (const [guildId, value] of Object.entries(raw)) {
+		migrated[guildId] = typeof value === 'string' ? { channelId: value } : value;
+	}
+	return migrated;
 }
 
-function writeChannels(data) {
+function writeData(data) {
 	ensureFile();
 	fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
 }
 
 function setChannel(guildId, channelId) {
-	const data = readChannels();
-	data[guildId] = channelId;
-	writeChannels(data);
+	const data = readData();
+	data[guildId] = { ...data[guildId], channelId };
+	writeData(data);
 }
 
 function clearChannel(guildId) {
-	const data = readChannels();
-	delete data[guildId];
-	writeChannels(data);
+	const data = readData();
+	if (data[guildId]) delete data[guildId].channelId;
+	writeData(data);
 }
 
 function getChannel(guildId) {
-	return readChannels()[guildId];
+	return readData()[guildId]?.channelId;
 }
 
-function getAllChannels() {
-	return Object.values(readChannels());
+function setNotifyUser(guildId, userId) {
+	const data = readData();
+	data[guildId] = { ...data[guildId], notifyUserId: userId };
+	writeData(data);
 }
 
-module.exports = { setChannel, clearChannel, getChannel, getAllChannels };
+function clearNotifyUser(guildId) {
+	const data = readData();
+	if (data[guildId]) delete data[guildId].notifyUserId;
+	writeData(data);
+}
+
+function getNotifyUser(guildId) {
+	return readData()[guildId]?.notifyUserId;
+}
+
+function getAllGuildConfigs() {
+	return Object.values(readData()).filter((config) => config.channelId);
+}
+
+module.exports = {
+	setChannel,
+	clearChannel,
+	getChannel,
+	setNotifyUser,
+	clearNotifyUser,
+	getNotifyUser,
+	getAllGuildConfigs,
+};
+

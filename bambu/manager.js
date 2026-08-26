@@ -52,10 +52,11 @@ function broadcastStateChange(discordClient, printerName, oldState, newState, da
 	if (typeof data.mc_percent === 'number') embed.addFields({ name: 'Progress', value: `${data.mc_percent}%`, inline: true });
 	if (typeof data.mc_remaining_time === 'number') embed.addFields({ name: 'Remaining', value: `${data.mc_remaining_time} min`, inline: true });
 
-	for (const channelId of store.getAllChannels()) {
+	for (const { channelId, notifyUserId } of store.getAllGuildConfigs()) {
 		const channel = discordClient.channels.cache.get(channelId);
 		if (channel?.isTextBased()) {
-			channel.send({ embeds: [embed] }).catch((error) => console.error('Failed to send Bambu Lab notification:', error.message));
+			const content = notifyUserId ? `<@${notifyUserId}>` : undefined;
+			channel.send({ content, embeds: [embed] }).catch((error) => console.error('Failed to send Bambu Lab notification:', error.message));
 		}
 	}
 }
