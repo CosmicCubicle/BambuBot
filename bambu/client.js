@@ -53,9 +53,11 @@ class BambuLanClient extends EventEmitter {
 		};
 		const topic = `device/${this.serialNumber}/request`;
 
+		// Bambu Lab's on-printer broker does not reliably send QoS 1 PUBACKs for command
+		// topics, so publish at QoS 0 (fire-and-forget) instead of waiting on an ack that may never arrive.
 		return new Promise((resolve, reject) => {
-			const timeout = setTimeout(() => reject(new Error('Timed out waiting for the printer to acknowledge the command.')), 5000);
-			this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (error) => {
+			const timeout = setTimeout(() => reject(new Error('Timed out sending the command to the printer.')), 5000);
+			this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 }, (error) => {
 				clearTimeout(timeout);
 				if (error) reject(error);
 				else resolve();
