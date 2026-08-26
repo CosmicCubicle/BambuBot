@@ -45,12 +45,8 @@ module.exports = {
 		}[action];
 		const command = speed ? 'speed' : action;
 
-		try {
-			await bambu.control(printer, command, speed);
-			await interaction.reply({ content: `Sent ${action.replaceAll('_', ' ')} to ${printer}.`, ephemeral: true });
-		} catch (error) {
-			console.error('Bambu Lab control failed:', error.message);
-			await interaction.reply({ content: `Could not control the printer: ${error.message}`, ephemeral: true });
-		}
+		await interaction.deferReply({ ephemeral: true });
+		await bambu.control(printer, command, speed);
+		await interaction.editReply({ content: `Sent ${action.replaceAll('_', ' ')} to ${printer}.` });
 	},
 };

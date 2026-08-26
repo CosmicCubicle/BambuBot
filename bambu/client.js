@@ -54,7 +54,9 @@ class BambuLanClient extends EventEmitter {
 		const topic = `device/${this.serialNumber}/request`;
 
 		return new Promise((resolve, reject) => {
+			const timeout = setTimeout(() => reject(new Error('Timed out waiting for the printer to acknowledge the command.')), 5000);
 			this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (error) => {
+				clearTimeout(timeout);
 				if (error) reject(error);
 				else resolve();
 			});

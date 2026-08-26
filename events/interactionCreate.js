@@ -16,9 +16,9 @@ module.exports = {
 		} catch (error) {
 			console.error(error);
 			await commandLogger.logCommand(commandLogger.buildEntry(interaction, 'error', Date.now() - start, error), interaction.client);
-			const errorReply = { content: 'There was an error executing this command.', ephemeral: true };
+			const errorReply = { content: `There was an error executing this command: ${error.message}`, ephemeral: true };
 			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp(errorReply);
+				await interaction.editReply(errorReply).catch(() => interaction.followUp(errorReply));
 			} else {
 				await interaction.reply(errorReply);
 			}
