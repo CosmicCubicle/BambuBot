@@ -17,7 +17,6 @@
     "nodemon": "^3.1.14"
   },
   "dependencies": {
-    "@azure/event-hubs": "^5.12.2",
     "discord.js": "^14.27.0",
     "dotenv": "^17.4.2",
     "mqtt": "^5.10.4"

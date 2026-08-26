@@ -8,16 +8,6 @@ const LOG_FILE = path.join(LOG_DIR, 'commands.log');
 const SUCCESS_CHANNEL_ID = process.env.LOG_CHANNEL_SUCCESS_ID || process.env.LOG_CHANNEL_ID || null;
 const ERROR_CHANNEL_ID = process.env.LOG_CHANNEL_ERROR_ID || process.env.LOG_CHANNEL_ID || null;
 
-let eventHubProducer = null;
-if (process.env.EVENT_HUB_CONNECTION_STRING && process.env.EVENT_HUB_NAME) {
-	try {
-		const { EventHubProducerClient } = require('@azure/event-hubs');
-		eventHubProducer = new EventHubProducerClient(process.env.EVENT_HUB_CONNECTION_STRING, process.env.EVENT_HUB_NAME);
-	} catch (error) {
-		console.error('Failed to initialize Azure Event Hub client:', error.message);
-	}
-}
-
 function ensureLogDir() {
 	if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
 }
@@ -83,15 +73,6 @@ async function logCommand(entry, client) {
 
 	const channelId = entry.status === 'error' ? ERROR_CHANNEL_ID : SUCCESS_CHANNEL_ID;
 	await sendToDiscordChannel(client, channelId, entry);
-
-	if (!eventHubProducer) return;
-	try {
-		const batch = await eventHubProducer.createBatch();
-		batch.tryAdd({ body: entry });
-		await eventHubProducer.sendBatch(batch);
-	} catch (error) {
-		console.error('Failed to send command log to Event Hub:', error.message);
-	}
 }
 
 module.exports = { logCommand, buildEntry };
