@@ -12,10 +12,10 @@ module.exports = {
 		const start = Date.now();
 		try {
 			await command.execute(interaction);
-			await commandLogger.logCommand(commandLogger.buildEntry(interaction, 'success', Date.now() - start));
+			await commandLogger.logCommand(commandLogger.buildEntry(interaction, 'success', Date.now() - start), interaction.client);
 		} catch (error) {
 			console.error(error);
-			await commandLogger.logCommand(commandLogger.buildEntry(interaction, 'error', Date.now() - start, error));
+			await commandLogger.logCommand(commandLogger.buildEntry(interaction, 'error', Date.now() - start, error), interaction.client);
 			const errorReply = { content: 'There was an error executing this command.', ephemeral: true };
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp(errorReply);

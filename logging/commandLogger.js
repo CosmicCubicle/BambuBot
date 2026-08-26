@@ -1,8 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { EmbedBuilder } = require('discord.js');
 
 const LOG_DIR = path.join(__dirname, '..', 'logs');
 const LOG_FILE = path.join(LOG_DIR, 'commands.log');
+
+const SUCCESS_CHANNEL_ID = process.env.LOG_CHANNEL_SUCCESS_ID || process.env.LOG_CHANNEL_ID || null;
+const ERROR_CHANNEL_ID = process.env.LOG_CHANNEL_ERROR_ID || process.env.LOG_CHANNEL_ID || null;
 
 let eventHubProducer = null;
 if (process.env.EVENT_HUB_CONNECTION_STRING && process.env.EVENT_HUB_NAME) {
@@ -43,9 +47,42 @@ function toHumanLine(entry) {
 	return `[${entry.timestamp}] ${entry.status.toUpperCase()} /${entry.command}${options} by ${entry.user} in #${entry.channel} (${entry.guild}) — ${entry.durationMs}ms${errorSuffix}`;
 }
 
-async function logCommand(entry) {
+function toEmbed(entry) {
+	const embed = new EmbedBuilder()
+		.setTitle(`/${entry.command}`)
+		.setColor(entry.status === 'error' ? 0xed4245 : 0x57f287)
+		.addFields(
+			{ name: 'Status', value: entry.status.toUpperCase(), inline: true },
+			{ name: 'Duration', value: `${entry.durationMs}ms`, inline: true },
+			{ name: 'User', value: entry.user, inline: true },
+			{ name: 'Location', value: `#${entry.channel} (${entry.guild})` },
+		)
+		.setTimestamp(new Date(entry.timestamp));
+
+	if (entry.options) embed.addFields({ name: 'Options', value: entry.options });
+	if (entry.error) embed.addFields({ name: 'Error', value: entry.error });
+
+	return embed;
+}
+
+async function sendToDiscordChannel(client, channelId, entry) {
+	if (!channelId || !client) return;
+	try {
+		const channel = client.channels.cache.get(channelId) ?? (await client.channels.fetch(channelId));
+		if (channel?.isTextBased()) {
+			await channel.send({ embeds: [toEmbed(entry)] });
+		}
+	} catch (error) {
+		console.error(`Failed to send command log to Discord channel ${channelId}:`, error.message);
+	}
+}
+
+async function logCommand(entry, client) {
 	ensureLogDir();
 	fs.appendFileSync(LOG_FILE, `${toHumanLine(entry)}\n`);
+
+	const channelId = entry.status === 'error' ? ERROR_CHANNEL_ID : SUCCESS_CHANNEL_ID;
+	await sendToDiscordChannel(client, channelId, entry);
 
 	if (!eventHubProducer) return;
 	try {
