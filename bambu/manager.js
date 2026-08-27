@@ -69,6 +69,11 @@ function getStatus(printerName) {
 	return bambuClients.get(printerName)?.lastStatus ?? null;
 }
 
+function getPrinterConfig(printerName) {
+	const client = bambuClients.get(printerName);
+	return client ? { host: client.host, accessCode: client.accessCode, serialNumber: client.serialNumber } : null;
+}
+
 async function control(printerName, action, value) {
 	const bambuClient = bambuClients.get(printerName);
 	if (!bambuClient) throw new Error(`Unknown Bambu Lab printer: ${printerName}`);
@@ -90,4 +95,4 @@ async function control(printerName, action, value) {
 	return bambuClient.publishPrintCommand(command, fields);
 }
 
-module.exports = { init, getPrinters, getStatus, control };
+module.exports = { init, getPrinters, getStatus, getPrinterConfig, control };
