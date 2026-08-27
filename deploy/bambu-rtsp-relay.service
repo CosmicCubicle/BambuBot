@@ -1,0 +1,14 @@
+[Unit]
+Description=Relay Black_LAN printer camera to RTSP
+After=bambubot.service mediamtx.service
+Requires=bambubot.service mediamtx.service
+
+[Service]
+Type=simple
+User=cosmic
+ExecStart=/usr/bin/ffmpeg -nostdin -loglevel warning -fflags nobuffer -i http://127.0.0.1:8080/stream/Black_LAN.mjpeg -an -c:v libx264 -preset ultrafast -tune zerolatency -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/Black_LAN
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
