@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 User=cosmic
 WorkingDirectory=/opt/BambuBot
-ExecStart=/home/cosmic/.nvm/versions/node/v20.20.2/bin/node /opt/BambuBot/index.js
+ExecStart=/bin/bash -lc 'source "$HOME/.nvm/nvm.sh" && exec node /opt/BambuBot/index.js'
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production

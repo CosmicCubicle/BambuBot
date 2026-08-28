@@ -1,12 +1,13 @@
 [Unit]
-Description=Relay Black_LAN printer camera to RTSP
+Description=Relay Bambu Lab printer camera to RTSP
 After=bambubot.service mediamtx.service
 Requires=bambubot.service mediamtx.service
 
 [Service]
 Type=simple
 User=cosmic
-ExecStart=/usr/bin/ffmpeg -nostdin -loglevel warning -fflags nobuffer -i http://127.0.0.1:8080/stream/Black_LAN.mjpeg -an -c:v libx264 -preset ultrafast -tune zerolatency -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/Black_LAN
+EnvironmentFile=/opt/BambuBot/hom.env
+ExecStart=/opt/BambuBot/deploy/start-rtsp-relay.sh
 Restart=always
 RestartSec=5
 
