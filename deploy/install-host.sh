@@ -85,4 +85,4 @@ if ! grep -q '^DISCORD_TOKEN=your-bot-token-here$' "$INSTALL_DIR/hom.env"; then
 	fi
 fi
 
-printf 'Installation complete. Configure %s, then run: sudo systemctl restart bambubot.service\n' "$INSTALL_DIR/hom.env"
+printf 'Installation complete. Run the interactive onboarding prompt next:\n  %s/deploy/onboard.sh\n' "$INSTALL_DIR"
