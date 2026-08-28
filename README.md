@@ -113,7 +113,6 @@ The MJPEG URL is `http://gideon.local:8080/stream/X1%20Carbon.mjpeg`; the RTSP U
 | `/bambu-status printer:<name>` | Shows one printer's state, progress, remaining time, and active file. |
 | `/bambu-status-all` | Shows the current status of all configured printers. |
 | `/bambu-control printer:<name> action:<action>` | Pauses, resumes, stops, changes speed, or controls the chamber light. Stop requires `confirm_stop:true`; Manage Server permission is required. |
-| `/bambu-maintenance home printer:<name> confirm:true` | Homes all printer axes. Requires Manage Server permission. |
 | `/bambu-maintenance load printer:<name> ams:<0+> slot:<0-3> confirm:true` | Loads filament from an AMS slot. Requires Manage Server permission. |
 | `/bambu-maintenance set-filament printer:<name> ams:<0+> slot:<0-3> type:<type> color:<RRGGBBAA>` | Sets the displayed material type and RGBA color metadata for an AMS slot. Requires Manage Server permission. |
 | `/bambu-channel set channel:<channel>` | Sets the current server's printer-notification channel. |
@@ -140,6 +139,7 @@ The sync job records deployments in `/opt/BambuBot/sync.log`. To pull a pushed c
 
 When `commands/` or `deploy-commands.js` changes, sync automatically re-registers slash commands. When `package-lock.json` changes, it refreshes production dependencies. Every changed deploy restarts `bambubot.service`.
 
-## AMS Physical Unload
+## Known Limitations
 
-The Bambu LAN MQTT protocol does not expose a verified, model-independent command to physically unload filament from the AMS. The bot intentionally does not send a guessed motor or G-code sequence for that operation. Use the printer touchscreen or Bambu Studio to unload until a tested protocol command is available for the specific printer model.
+- **Homing**: Recent Bambu Lab firmware requires raw G-code commands (used to home the printer) to be cryptographically signed by official Bambu Studio or Handy. Third-party LAN clients, including this bot, receive `HMS_0500-0500-0001-0007` ("MQTT Command verification failed") if a home command is sent, and the printer silently rejects it with no ack available to the bot. There is no `/bambu-maintenance home` command for this reason.
+- **AMS physical unload**: The Bambu LAN MQTT protocol does not expose a verified, model-independent command to physically unload filament from the AMS. The bot intentionally does not send a guessed motor or G-code sequence for that operation. Use the printer touchscreen or Bambu Studio to unload until a tested protocol command is available for the specific printer model.

@@ -28,16 +28,8 @@ function slotOption(option) {
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('bambu-maintenance')
-		.setDescription('Home the printer or manage AMS filament settings.')
+		.setDescription('Manage AMS filament settings.')
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-		.addSubcommand((subcommand) => subcommand
-			.setName('home')
-			.setDescription('Home all printer axes.')
-			.addStringOption(printerOption)
-			.addBooleanOption((option) => option
-				.setName('confirm')
-				.setDescription('Required to home the printer.')
-				.setRequired(true)))
 		.addSubcommand((subcommand) => subcommand
 			.setName('load')
 			.setDescription('Load filament from an AMS slot.')
@@ -74,18 +66,12 @@ module.exports = {
 			return;
 		}
 
-		if ((subcommand === 'home' || subcommand === 'load') && !interaction.options.getBoolean('confirm')) {
+		if (subcommand === 'load' && !interaction.options.getBoolean('confirm')) {
 			await interaction.reply({ content: `Set confirm:true to run the ${subcommand} operation.`, ephemeral: true });
 			return;
 		}
 
 		await interaction.deferReply({ ephemeral: true });
-		if (subcommand === 'home') {
-			await bambu.home(printer);
-			await interaction.editReply(`Sent home command to ${printer}.`);
-			return;
-		}
-
 		const amsId = interaction.options.getInteger('ams');
 		const slotId = interaction.options.getInteger('slot');
 		if (subcommand === 'load') {
