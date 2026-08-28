@@ -24,6 +24,16 @@ PariahBot is a Discord bot for monitoring and controlling Bambu Lab printers on 
 - Each Bambu printer in LAN mode, with its IP address, LAN access code, and serial number.
 - Internet access during install. The installer adds missing `git`, `curl`, and `ffmpeg` through `apt`, installs Node.js 20 with `nvm`, and downloads MediaMTX.
 
+## Discord Application Setup
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and select **New Application**. Give it a name, then select **Create**.
+2. On **General Information**, copy **Application ID**. This is the `CLIENT_ID` requested by onboarding.
+3. Open **Bot** in the sidebar, select **Add Bot**, then use **Reset Token** to reveal and copy the token. This is the `DISCORD_TOKEN` requested by onboarding. Store it only in `hom.env`; never commit it, publish it, or send it in chat.
+4. In **Installation**, add the `bot` and `applications.commands` scopes under **Guild Install**. Under **Permissions**, select at least **View Channels**, **Send Messages**, **Embed Links**, **Attach Files**, and **Read Message History**. Copy the generated install URL, open it in a browser, and add the bot to the target Discord server.
+5. Enable Discord **Developer Mode**: Discord User Settings → Advanced → Developer Mode. Right-click the target server and choose **Copy Server ID**. This is the optional `GUILD_ID` value. Set it to register slash commands immediately in that server; leave it blank to register globally, which Discord can take up to one hour to propagate.
+
+This bot only requests the Guilds gateway intent, so no privileged gateway intents need to be enabled in the Developer Portal.
+
 ## Host Installation
 
 Clone this repository, then run the installer from its root as the non-root account that will own and run the bot:
