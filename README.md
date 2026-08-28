@@ -7,7 +7,8 @@ PariahBot is a Discord bot for monitoring and controlling Bambu Lab printers on 
 - Direct Bambu Lab LAN MQTT connection with automatic reconnects.
 - Printer state-change notifications to a Discord channel, with an optional user mention.
 - Status for one printer or all configured printers.
-- Print controls: pause, resume, confirmed stop, speed selection, and chamber light controls.
+- Print controls: pause, resume, confirmed stop, speed selection, chamber light controls, and confirmed homing.
+- AMS load controls and AMS slot material/color metadata updates.
 - Printer-camera snapshots for one or every configured printer.
 - LAN-only MJPEG camera relay and optional RTSP output via FFmpeg and MediaMTX.
 - Human-readable command audit log at `logs/commands.log`.
@@ -102,6 +103,9 @@ The MJPEG URL is `http://gideon.local:8080/stream/X1%20Carbon.mjpeg`; the RTSP U
 | `/bambu-status printer:<name>` | Shows one printer's state, progress, remaining time, and active file. |
 | `/bambu-status-all` | Shows the current status of all configured printers. |
 | `/bambu-control printer:<name> action:<action>` | Pauses, resumes, stops, changes speed, or controls the chamber light. Stop requires `confirm_stop:true`; Manage Server permission is required. |
+| `/bambu-maintenance home printer:<name> confirm:true` | Homes all printer axes. Requires Manage Server permission. |
+| `/bambu-maintenance load printer:<name> ams:<0+> slot:<0-3> confirm:true` | Loads filament from an AMS slot. Requires Manage Server permission. |
+| `/bambu-maintenance set-filament printer:<name> ams:<0+> slot:<0-3> type:<type> color:<RRGGBBAA>` | Sets the displayed material type and RGBA color metadata for an AMS slot. Requires Manage Server permission. |
 | `/bambu-channel set channel:<channel>` | Sets the current server's printer-notification channel. |
 | `/bambu-channel clear` | Disables printer notifications in the current server. |
 | `/bambu-notify set user:<user>` | Mentions a user for printer state-change notifications. |
@@ -125,3 +129,7 @@ The sync job records deployments in `/opt/BambuBot/sync.log`. To pull a pushed c
 ```
 
 When `commands/` or `deploy-commands.js` changes, sync automatically re-registers slash commands. When `package-lock.json` changes, it refreshes production dependencies. Every changed deploy restarts `bambubot.service`.
+
+## AMS Physical Unload
+
+The Bambu LAN MQTT protocol does not expose a verified, model-independent command to physically unload filament from the AMS. The bot intentionally does not send a guessed motor or G-code sequence for that operation. Use the printer touchscreen or Bambu Studio to unload until a tested protocol command is available for the specific printer model.

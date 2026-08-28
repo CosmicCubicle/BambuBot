@@ -95,4 +95,36 @@ async function control(printerName, action, value) {
 	return bambuClient.publishPrintCommand(command, fields);
 }
 
-module.exports = { init, getPrinters, getStatus, getPrinterConfig, control };
+async function home(printerName) {
+	const bambuClient = bambuClients.get(printerName);
+	if (!bambuClient) throw new Error(`Unknown Bambu Lab printer: ${printerName}`);
+	return bambuClient.publishPrintCommand('gcode_line', { param: 'G28\n' });
+}
+
+async function loadAmsFilament(printerName, amsId, slotId) {
+	const bambuClient = bambuClients.get(printerName);
+	if (!bambuClient) throw new Error(`Unknown Bambu Lab printer: ${printerName}`);
+	return bambuClient.publishPrintCommand('ams_change_filament', {
+		ams_id: amsId,
+		slot_id: slotId,
+		target: amsId,
+		curr_temp: 0,
+		tar_temp: 0,
+	});
+}
+
+async function setAmsFilament(printerName, amsId, slotId, type, color) {
+	const bambuClient = bambuClients.get(printerName);
+	if (!bambuClient) throw new Error(`Unknown Bambu Lab printer: ${printerName}`);
+	return bambuClient.publishPrintCommand('ams_filament_setting', {
+		ams_id: amsId,
+		tray_id: slotId,
+		tray_info_idx: '',
+		tray_color: color.toUpperCase(),
+		nozzle_temp_min: 0,
+		nozzle_temp_max: 0,
+		tray_type: type.toUpperCase(),
+	});
+}
+
+module.exports = { init, getPrinters, getStatus, getPrinterConfig, control, home, loadAmsFilament, setAmsFilament };
