@@ -64,9 +64,10 @@ if [ ! -x /opt/mediamtx/mediamtx ]; then
 fi
 
 install -m 644 "$INSTALL_DIR/deploy/mediamtx.yml" /opt/mediamtx/mediamtx.yml
-install -m 644 "$INSTALL_DIR/deploy/bambubot.service" /etc/systemd/system/bambubot.service
-install -m 644 "$INSTALL_DIR/deploy/mediamtx.service" /etc/systemd/system/mediamtx.service
-install -m 644 "$INSTALL_DIR/deploy/bambu-rtsp-relay.service" /etc/systemd/system/bambu-rtsp-relay.service
+sed "s/^User=cosmic$/User=$BOT_USER/" "$INSTALL_DIR/deploy/bambubot.service" > /etc/systemd/system/bambubot.service
+sed "s/^User=cosmic$/User=$BOT_USER/" "$INSTALL_DIR/deploy/mediamtx.service" > /etc/systemd/system/mediamtx.service
+sed "s/^User=cosmic$/User=$BOT_USER/" "$INSTALL_DIR/deploy/bambu-rtsp-relay.service" > /etc/systemd/system/bambu-rtsp-relay.service
+chmod 644 /etc/systemd/system/bambubot.service /etc/systemd/system/mediamtx.service /etc/systemd/system/bambu-rtsp-relay.service
 chmod 755 "$INSTALL_DIR/deploy/start-rtsp-relay.sh"
 chmod 755 "$INSTALL_DIR/deploy/sync-bambubot.sh"
 
