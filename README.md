@@ -35,6 +35,14 @@ sudo ./deploy/install-host.sh
 
 The installer installs the application to `/opt/BambuBot`, creates `hom.env` from `.env.example` when it does not exist, installs Node.js and production dependencies, installs MediaMTX, installs systemd units, and creates a GitHub sync cron job at minutes `0`, `15`, `30`, and `45`.
 
+Run the onboarding prompt after installation:
+
+```bash
+/opt/BambuBot/deploy/onboard.sh
+```
+
+Later, use `--add` to add a printer, `--logging` to configure Discord command log channels, `--streaming` to configure the MJPEG/RTSP relay, or `--reset` to erase the configuration and run first-run setup again.
+
 ## Configuration
 
 Edit `/opt/BambuBot/hom.env`, then start the bot:

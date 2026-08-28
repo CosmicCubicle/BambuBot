@@ -70,6 +70,7 @@ sed "s/^User=cosmic$/User=$BOT_USER/" "$INSTALL_DIR/deploy/bambu-rtsp-relay.serv
 chmod 644 /etc/systemd/system/bambubot.service /etc/systemd/system/mediamtx.service /etc/systemd/system/bambu-rtsp-relay.service
 chmod 755 "$INSTALL_DIR/deploy/start-rtsp-relay.sh"
 chmod 755 "$INSTALL_DIR/deploy/sync-bambubot.sh"
+chmod 755 "$INSTALL_DIR/deploy/onboard.sh"
 
 systemctl daemon-reload
 systemctl enable mediamtx.service bambubot.service
