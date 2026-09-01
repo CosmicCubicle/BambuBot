@@ -1,16 +1,15 @@
 # PariahBot
 
-PariahBot is a Discord bot for monitoring and controlling Bambu Lab printers on a local network. It provides live printer status, safe print controls, camera snapshots, optional LAN video relays, state notifications, and command audit logs.
+PariahBot is a Discord bot for monitoring and controlling Bambu Lab printers via Bambu's cloud-relayed MQTT service. It provides live printer status, print controls, camera snapshots, state notifications, and command audit logs. No local network access to the printer is required.
 
 ## Features
 
-- Direct Bambu Lab LAN MQTT connection with automatic reconnects.
+- Cloud-relayed Bambu Lab MQTT connection via Bambu's servers, with automatic reconnects.
 - Printer state-change notifications to a Discord channel, with an optional user mention.
 - Status for one printer or all configured printers.
-- Print controls: pause, resume, confirmed stop, speed selection, chamber light controls, and confirmed homing.
+- Print controls: pause, resume, confirmed stop, speed selection, chamber light controls, and homing (via cloud relay).
 - AMS load controls and AMS slot material/color metadata updates.
-- Printer-camera snapshots for one or every configured printer.
-- LAN-only MJPEG camera relay and optional RTSP output via FFmpeg and MediaMTX.
+- Printer-camera snapshots for one or every configured printer (via Bambu cloud).
 - Human-readable command audit log at `logs/commands.log`.
 - Optional Discord channels for successful and failed command logs.
 - Dynamic `/help` generated from the registered commands.
@@ -18,11 +17,11 @@ PariahBot is a Discord bot for monitoring and controlling Bambu Lab printers on 
 
 ## Requirements
 
-- A Linux host using `systemd`, on the same LAN as the printers.
+- A Linux host using `systemd` with **internet access**. The host does not need to be on the same local network as the printers.
 - `sudo` access on that host and access to this GitHub repository.
 - A Discord application with a bot token and application ID; a guild ID is optional but makes command registration immediate for that guild.
-- Each Bambu printer in LAN mode, with its IP address, LAN access code, and serial number.
-- Internet access during install. The installer adds missing `git`, `curl`, and `ffmpeg` through `apt`, installs Node.js 20 with `nvm`, and downloads MediaMTX.
+- Each Bambu printer configured with a cloud-linked Bambu account; its device ID and cloud access token.
+- Internet access during install. The installer adds missing `git`, `curl` through `apt`, installs Node.js 20 with `nvm`, and downloads production Node dependencies.
 
 ## Discord Application Setup
 
@@ -68,8 +67,17 @@ Required values:
 DISCORD_TOKEN=your-bot-token
 CLIENT_ID=your-application-id
 GUILD_ID=your-test-server-id
-BAMBU_PRINTERS=[{"name":"X1 Carbon","host":"192.168.1.50","accessCode":"your-lan-access-code","serialNumber":"your-printer-serial"}]
+BAMBU_PRINTERS=[{"name":"X1 Carbon","deviceId":"your-cloud-device-id","cloudAccessToken":"your-cloud-access-token","serialNumber":"your-printer-serial"}]
 ```
+
+To get Bambu cloud credentials:
+
+1. Create a Bambu Lab account and link your printer to Bambu Cloud via Bambu Studio or the Bambu mobile app.
+2. In Bambu Studio, go to **Preferences** → **Cloud** → **Device List**. For each printer, note the **Device ID**.
+3. Generate a **cloud access token**:
+   - On Bambu Cloud (https://bambulab.com), open **Account Settings** → **API Keys**.
+   - Create a new API key (or use an existing one). This is your cloud access token.
+   - Alternative: Some users obtain a token by querying the cloud login endpoint; check Bambu's documentation for your account region.
 
 Keep `hom.env` private. It is ignored by Git and should have mode `600`.
 
@@ -85,24 +93,7 @@ LOG_CHANNEL_ERROR_ID=
 
 `LOG_CHANNEL_SUCCESS_ID` and `LOG_CHANNEL_ERROR_ID` override the shared value for their matching outcome. The bot needs permission to view and send messages in those channels.
 
-### Camera and RTSP Streaming
-
-Snapshots need no additional configuration. To enable the MJPEG camera URL and RTSP service, set a LAN-reachable hostname/IP, an unused HTTP port, and the exact configured printer name:
-
-```dotenv
-BAMBU_STREAM_HOST=gideon.local
-BAMBU_STREAM_PORT=8080
-BAMBU_RTSP_PRINTER=X1 Carbon
-```
-
-Then start the relevant services:
-
-```bash
-sudo systemctl restart bambubot.service mediamtx.service
-sudo systemctl enable --now bambu-rtsp-relay.service
-```
-
-The MJPEG URL is `http://gideon.local:8080/stream/X1%20Carbon.mjpeg`; the RTSP URL is `rtsp://gideon.local:8554/X1%20Carbon`. These endpoints have no application-level authentication. Keep ports `8080` and `8554` limited to your LAN or protect them with a firewall.
+**Note:** Camera relay and RTSP streaming are not available in cloud mode, as the bot does not have direct access to the printer's network. Use Bambu Studio or Bambu's web interface for remote camera views.
 
 ## Discord Commands
 
@@ -120,7 +111,6 @@ The MJPEG URL is `http://gideon.local:8080/stream/X1%20Carbon.mjpeg`; the RTSP U
 | `/bambu-notify set user:<user>` | Mentions a user for printer state-change notifications. |
 | `/bambu-notify clear` | Stops user mentions for printer notifications. |
 | `/bambu-snapshot [printer:<name>]` | Posts a camera image for one printer, or every configured printer when omitted. |
-| `/bambu-camera-link printer:<name>` | Returns the configured MJPEG camera URL. |
 
 ## Operations
 
@@ -141,5 +131,5 @@ When `commands/` or `deploy-commands.js` changes, sync automatically re-register
 
 ## Known Limitations
 
-- **Homing**: Recent Bambu Lab firmware requires raw G-code commands (used to home the printer) to be cryptographically signed by official Bambu Studio or Handy. Third-party LAN clients, including this bot, receive `HMS_0500-0500-0001-0007` ("MQTT Command verification failed") if a home command is sent, and the printer silently rejects it with no ack available to the bot. There is no `/bambu-maintenance home` command for this reason.
-- **AMS physical unload**: The Bambu LAN MQTT protocol does not expose a verified, model-independent command to physically unload filament from the AMS. The bot intentionally does not send a guessed motor or G-code sequence for that operation. Use the printer touchscreen or Bambu Studio to unload until a tested protocol command is available for the specific printer model.
+- **Camera relay**: Cloud-relayed MQTT does not include direct access to the printer's camera port. Snapshots work via Bambu's cloud image service, but the MJPEG/RTSP relay is unavailable. Use Bambu Studio or the Bambu web interface for remote camera streams.
+- **AMS physical unload**: The Bambu MQTT protocol does not expose a verified, model-independent command to physically unload filament from the AMS. The bot intentionally does not send a guessed motor or G-code sequence for that operation. Use the printer touchscreen or Bambu Studio to unload until a tested protocol command is available for the specific printer model.

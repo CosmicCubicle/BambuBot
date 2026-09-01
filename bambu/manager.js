@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { BambuLanClient } = require('./client');
+const { BambuCloudClient } = require('./client');
 const store = require('./store');
 
 const STATE_COLORS = {
@@ -23,14 +23,14 @@ async function init(discordClient) {
 		if (!Array.isArray(printers) || printers.length === 0) throw new Error('BAMBU_PRINTERS must be a non-empty JSON array.');
 
 		for (const printer of printers) {
-			if (!printer.name || !printer.host || !printer.accessCode || !printer.serialNumber) {
-				throw new Error('Each Bambu printer needs name, host, accessCode, and serialNumber.');
+			if (!printer.name || !printer.deviceId || !printer.serialNumber || !printer.cloudAccessToken) {
+				throw new Error('Each Bambu printer needs name, deviceId, serialNumber, and cloudAccessToken.');
 			}
 			if (bambuClients.has(printer.name)) throw new Error(`Duplicate Bambu printer name: ${printer.name}`);
 
-			const client = new BambuLanClient(printer);
+			const client = new BambuCloudClient(printer);
 			bambuClients.set(printer.name, client);
-			client.on('connect', () => console.log(`Connected to Bambu Lab printer ${printer.name} at ${printer.host}.`));
+			client.on('connect', () => console.log(`Connected to Bambu Lab printer ${printer.name} via cloud relay.`));
 			client.on('disconnect', () => console.warn(`Disconnected from Bambu Lab printer ${printer.name}.`));
 			client.on('error', (error) => console.error(`Bambu Lab ${printer.name} MQTT error:`, error.message));
 			client.on('stateChange', ({ oldState, newState, data }) => broadcastStateChange(discordClient, printer.name, oldState, newState, data));
@@ -71,7 +71,7 @@ function getStatus(printerName) {
 
 function getPrinterConfig(printerName) {
 	const client = bambuClients.get(printerName);
-	return client ? { host: client.host, accessCode: client.accessCode, serialNumber: client.serialNumber } : null;
+	return client ? { deviceId: client.deviceId, serialNumber: client.serialNumber } : null;
 }
 
 async function control(printerName, action, value) {

@@ -1,14 +1,14 @@
 const mqtt = require('mqtt');
 const { EventEmitter } = require('node:events');
 
-// Connects directly to a printer in LAN mode and re-emits status updates.
-class BambuLanClient extends EventEmitter {
-	constructor({ name, host, accessCode, serialNumber }) {
+// Connects to a printer via Bambu's cloud-relayed MQTT and re-emits status updates.
+class BambuCloudClient extends EventEmitter {
+	constructor({ name, deviceId, serialNumber, cloudAccessToken }) {
 		super();
 		this.name = name;
-		this.host = host;
-		this.accessCode = accessCode;
+		this.deviceId = deviceId; // Bambu cloud device identifier
 		this.serialNumber = serialNumber;
+		this.cloudAccessToken = cloudAccessToken; // Cloud auth token (not LAN access code)
 		this.lastState = null;
 		this.lastStatus = null;
 		this.mqttClient = null;
@@ -16,15 +16,18 @@ class BambuLanClient extends EventEmitter {
 	}
 
 	connect() {
-		this.mqttClient = mqtt.connect(`mqtts://${this.host}:8883`, {
-			username: 'bblp',
-			password: this.accessCode,
+		// Connect via Bambu's cloud MQTT relay instead of direct printer IP.
+		this.mqttClient = mqtt.connect('mqtts://mqtt.bambulab.com:8883', {
+			clientId: `PariahBot_${this.deviceId}`,
+			username: `u_${this.deviceId}`,
+			password: this.cloudAccessToken,
 			reconnectPeriod: 5000,
-			rejectUnauthorized: false,
+			rejectUnauthorized: true,
 		});
 
 		this.mqttClient.on('connect', () => {
-			this.mqttClient.subscribe(`device/${this.serialNumber}/report`);
+			// Cloud relay uses different topic structure: /c/<device-id>/report
+			this.mqttClient.subscribe(`/c/${this.deviceId}/report`);
 			this.emit('connect');
 		});
 
@@ -43,7 +46,7 @@ class BambuLanClient extends EventEmitter {
 	}
 
 	publishCommand(type, fields = {}) {
-		if (!this.mqttClient?.connected) throw new Error('Bambu Lab MQTT is not connected.');
+		if (!this.mqttClient?.connected) throw new Error('Bambu Lab cloud MQTT is not connected.');
 
 		const payload = {
 			[type]: {
@@ -51,13 +54,13 @@ class BambuLanClient extends EventEmitter {
 				...fields,
 			},
 		};
-		const topic = `device/${this.serialNumber}/request`;
+		// Cloud relay uses: /c/<device-id>/request
+		const topic = `/c/${this.deviceId}/request`;
 
-		// Bambu Lab's on-printer broker does not reliably send QoS 1 PUBACKs for command
-		// topics, so publish at QoS 0 (fire-and-forget) instead of waiting on an ack that may never arrive.
+		// Cloud relay brokers are more reliable; use QoS 1 for better delivery guarantee.
 		return new Promise((resolve, reject) => {
-			const timeout = setTimeout(() => reject(new Error('Timed out sending the command to the printer.')), 5000);
-			this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 }, (error) => {
+			const timeout = setTimeout(() => reject(new Error('Timed out sending the command to the printer.')), 8000);
+			this.mqttClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (error) => {
 				clearTimeout(timeout);
 				if (error) reject(error);
 				else resolve();
@@ -88,4 +91,4 @@ class BambuLanClient extends EventEmitter {
 	}
 }
 
-module.exports = { BambuLanClient };
+module.exports = { BambuCloudClient };
